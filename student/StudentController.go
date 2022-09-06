@@ -7,12 +7,9 @@ import (
 	"strconv"
 )
 
-type Controller struct {
-}
-
 var students []Student
 
-func NewStudentController(router *mux.Router) *Controller {
+func NewStudentController(router *mux.Router) {
 	students = []Student{
 		{ID: 1, NAME: "name1", EMAIL: "name1@mail.com"},
 		{ID: 2, NAME: "name2", EMAIL: "name2@mail.com"},
@@ -24,8 +21,6 @@ func NewStudentController(router *mux.Router) *Controller {
 	router.HandleFunc("/students", saveStudent).Methods("POST")
 	router.HandleFunc("/students/{id}", updateStudent).Methods("PUT")
 	router.HandleFunc("/students/{id}", deleteStudent).Methods("DELETE")
-
-	return &Controller{}
 }
 
 func getAllstudents(w http.ResponseWriter, r *http.Request) {
