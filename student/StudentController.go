@@ -7,81 +7,87 @@ import (
 	"strconv"
 )
 
-var students []Student
-
-func NewStudentController(router *mux.Router) {
-	students = []Student{
-		{ID: 1, NAME: "name1", EMAIL: "name1@mail.com"},
-		{ID: 2, NAME: "name2", EMAIL: "name2@mail.com"},
-		{ID: 3, NAME: "name3", EMAIL: "name3@mail.com"},
-	}
-
-	router.HandleFunc("/students", getAllstudents).Methods("GET")
-	router.HandleFunc("/students/{id}", getStudent).Methods("GET")
-	router.HandleFunc("/students", saveStudent).Methods("POST")
-	router.HandleFunc("/students/{id}", updateStudent).Methods("PUT")
-	router.HandleFunc("/students/{id}", deleteStudent).Methods("DELETE")
+type StudentController struct {
+	STUDENTS []Student
 }
 
-func getAllstudents(w http.ResponseWriter, r *http.Request) {
+func NewStudentController(router *mux.Router) *StudentController {
+	students := []Student{
+		{ID: 1, NAME: "name1", EMAIL: "name1@domain"},
+		{ID: 2, NAME: "name2", EMAIL: "name2@domain"},
+		{ID: 3, NAME: "name3", EMAIL: "name3@domain"},
+	}
+
+	sc := &StudentController{students}
+
+	usersR := router.PathPrefix("/students").Subrouter()
+	usersR.Path("").Methods(http.MethodGet).HandlerFunc(sc.getAllStudents)
+	usersR.Path("").Methods(http.MethodPost).HandlerFunc(sc.saveStudent)
+	usersR.Path("/{id}").Methods(http.MethodGet).HandlerFunc(sc.getStudent)
+	usersR.Path("/{id}").Methods(http.MethodPut).HandlerFunc(sc.updateStudent)
+	usersR.Path("/{id}").Methods(http.MethodDelete).HandlerFunc(sc.deleteStudent)
+	return sc
+}
+
+func (StudentController *StudentController) getAllStudents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(students)
+	err := json.NewEncoder(w).Encode(StudentController.STUDENTS)
 	if err != nil {
 		return
 	}
 }
 
-func getStudent(w http.ResponseWriter, r *http.Request) {
+func (sc *StudentController) getStudent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	id, _ := strconv.Atoi(params["id"])
 
-	for _, student := range students {
+	for _, student := range sc.STUDENTS {
 		if student.ID == id {
 			json.NewEncoder(w).Encode(student)
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(MESSAGE{"User not found"})
+	http.Error(w, "User not found", http.StatusBadRequest)
 }
 
-func saveStudent(w http.ResponseWriter, r *http.Request) {
+func (sc *StudentController) saveStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var student Student
 	json.NewDecoder(r.Body).Decode(&student)
-	students = append(students, student)
+	sc.STUDENTS = append(sc.STUDENTS, student)
 	json.NewEncoder(w).Encode(MESSAGE{"User saved successfully"})
 }
 
-func updateStudent(w http.ResponseWriter, r *http.Request) {
+func (sc *StudentController) updateStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var updatedStudent Student
 	json.NewDecoder(r.Body).Decode(&updatedStudent)
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	for index, student := range students {
+	for index, student := range sc.STUDENTS {
 		if student.ID == id {
-			students = append(students[:index], students[index+1:]...)
-			students = append(students, updatedStudent)
+			sc.STUDENTS = append(sc.STUDENTS[:index], sc.STUDENTS[index+1:]...)
+			sc.STUDENTS = append(sc.STUDENTS, updatedStudent)
 			json.NewEncoder(w).Encode(MESSAGE{"User updated successfully"})
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(MESSAGE{"User not found"})
+	http.Error(w, "User not found", http.StatusBadRequest)
 }
 
-func deleteStudent(w http.ResponseWriter, request *http.Request) {
+func (sc *StudentController) deleteStudent(w http.ResponseWriter, request *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(request)
 	id, _ := strconv.Atoi(params["id"])
 
-	for index, student := range students {
+	for index, student := range sc.STUDENTS {
 		if student.ID == id {
-			students = append(students[:index], students[index+1:]...)
+			sc.STUDENTS = append(sc.STUDENTS[:index], sc.STUDENTS[index+1:]...)
 			json.NewEncoder(w).Encode(MESSAGE{"User deleted successfully"})
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(MESSAGE{"User not found"})
+	http.Error(w, "User not found", http.StatusBadRequest)
 }
