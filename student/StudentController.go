@@ -31,10 +31,7 @@ func NewStudentController(router *mux.Router) *StudentController {
 
 func (StudentController *StudentController) getAllStudents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(StudentController.STUDENTS)
-	if err != nil {
-		return
-	}
+	json.NewEncoder(w).Encode(StudentController.STUDENTS)
 }
 
 func (sc *StudentController) getStudent(w http.ResponseWriter, r *http.Request) {
